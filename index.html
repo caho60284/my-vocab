@@ -364,53 +364,42 @@ checkIPA.innerText = ""
 function hearWord(){if(checkWord.innerText)speak(checkWord.innerText)}
 
 function testWord(){
-  if(!currentCheckWord) return
+if(!checkWord.innerText)return
+const btn=document.getElementById("testBtn")
+const wave=document.getElementById("wave")
+btn.classList.add("recording")
+wave.style.display="flex"
 
-  const btn = document.getElementById("testBtn")
-  const wave = document.getElementById("wave")
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition
+if(!SR){btn.classList.remove("recording");wave.style.display="none";return}
 
-  btn.classList.add("recording")
-  wave.style.display="flex"
+const recognition=new SR()
+recognition.lang="en-US"
 
-  const SR = window.webkitSpeechRecognition
-  if(!SR){
-    alert("Speech recognition not supported")
-    return
-  }
+recognition.onresult=e=>{
+let spoken=e.results[0][0].transcript.toLowerCase()
+if(spoken.includes(checkWord.innerText)){
+checkResult.innerHTML="✔ Correct"
+}else{
+checkResult.innerHTML="✖ Wrong"
+hearWord()
+}
+btn.classList.remove("recording")
+wave.style.display="none"
+recognition.stop()
+}
 
-  const recognition = new SR()
-  recognition.lang = "en-US"
-  recognition.interimResults = false
-  recognition.maxAlternatives = 1
+recognition.onerror=()=>{
+btn.classList.remove("recording")
+wave.style.display="none"
+}
 
-  recognition.onresult = e=>{
-    let spoken = e.results[0][0].transcript.toLowerCase().trim()
+recognition.onend=()=>{
+btn.classList.remove("recording")
+wave.style.display="none"
+}
 
-    if(spoken.includes(currentCheckWord)){
-      checkResult.innerHTML="✔ Correct"
-      playDing()
-    }else{
-      checkResult.innerHTML="✘ Wrong"
-      playBeep()
-      hearWord()
-    }
-
-    updateScore()
-    btn.classList.remove("recording")
-    wave.style.display="none"
-  }
-
-  recognition.onerror = ()=>{
-    btn.classList.remove("recording")
-    wave.style.display="none"
-  }
-
-  recognition.onend = ()=>{
-    btn.classList.remove("recording")
-    wave.style.display="none"
-  }
-
-  recognition.start()
+recognition.start()
 }
 
 function exportCSV(){
