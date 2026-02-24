@@ -376,17 +376,37 @@ if(!SR){btn.classList.remove("recording");wave.style.display="none";return}
 const recognition=new SR()
 recognition.lang="en-US"
 
-recognition.onresult=e=>{
-let spoken=e.results[0][0].transcript.toLowerCase()
-if(spoken.replace(/[^a-z']/g,"").includes(currentCheckWord.replace(/[^a-z']/g,""))){
-checkResult.innerHTML="✔ Correct"
-}else{
-checkResult.innerHTML="✖ Wrong"
-hearWord()
-}
-btn.classList.remove("recording")
-wave.style.display="none"
-recognition.stop()
+recognition.onresult = e => {
+  let spoken = "";
+  for (let i = e.resultIndex; i < e.results.length; i++) {
+    if (e.results[i].isFinal) {
+      spoken += e.results[i][0].transcript;
+    }
+  }
+
+  spoken = spoken.toLowerCase().replace(/[^a-z']/g,"");
+  let target = currentCheckWord.toLowerCase().replace(/[^a-z']/g,"");
+
+  if(!spoken){
+    recognition.stop();
+    btn.classList.remove("recording");
+    wave.style.display="none";
+    return;
+  }
+
+  if(spoken.includes(target)){
+    checkResult.innerHTML="✔ Correct";
+    correct++;
+  }else{
+    checkResult.innerHTML="✖ Wrong";
+    playBeep();
+    hearWord();
+  }
+
+  updateScore();
+  btn.classList.remove("recording");
+  wave.style.display="none";
+  recognition.stop();
 }
 
 recognition.onerror=()=>{
