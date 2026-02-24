@@ -432,8 +432,11 @@ a.download=name
 document.body.appendChild(a)
 a.click()
 
-setTimeout(()=>URL.revokeObjectURL(url),1000)
-a.remove()
+setTimeout(function(){
+  URL.revokeObjectURL(url)
+  document.body.removeChild(a)
+},500)
+
 }
 
 function importCSV(){
