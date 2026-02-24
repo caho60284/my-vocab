@@ -412,14 +412,28 @@ recognition.start()
 }
 
 function exportCSV(){
+
+let name = prompt("Nama file CSV:", "my-vocab.csv")
+if(!name) return
+if(!name.toLowerCase().endsWith(".csv")) name += ".csv"
+
 let csv="word,pron,meaning,ex1,ipa1,tr1,ex2,ipa2,tr2,fav\n"
+
 data.forEach(v=>{
-csv+=`"${v.word}","${v.pron}","${v.meaning}","${v.ex1}","${v.ipa1}","${v.tr1}","${v.ex2}","${v.ipa2}","${v.tr2}","${v.fav?1:0}"\n`
+csv+="${v.word||""}","${v.pron||""}","${v.meaning||""}","${v.ex1||""}","${v.ipa1||""}","${v.tr1||""}","${v.ex2||""}","${v.ipa2||""}","${v.tr2||""}","${v.fav||""}"\n
 })
+
+const blob = new Blob(["\uFEFF"+csv], {type:"text/csv;charset=utf-8;"})
+const url = URL.createObjectURL(blob)
+
 const a=document.createElement("a")
-a.href=URL.createObjectURL(new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8;"}))
-a.download="my-vocab.csv"
+a.href=url
+a.download=name
+document.body.appendChild(a)
 a.click()
+
+setTimeout(()=>URL.revokeObjectURL(url),1000)
+a.remove()
 }
 
 function importCSV(){
