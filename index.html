@@ -378,13 +378,21 @@ recognition.lang="en-US"
 
 recognition.onresult = e => {
 
-  let spoken = (e.results[0][0].transcript || "")
+  let transcript = ""
+
+  for(let i=0;i<e.results.length;i++){
+    transcript += e.results[i][0].transcript
+  }
+
+  let spoken = transcript
     .toLowerCase()
     .replace(/[^a-z']/g,"")
 
   let target = (checkWord.innerText || "")
     .toLowerCase()
     .replace(/[^a-z']/g,"")
+
+  if(!spoken) return
 
   if(spoken.includes(target) && target.length>0){
     checkResult.innerHTML="✔ Correct"
