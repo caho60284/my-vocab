@@ -378,7 +378,7 @@ recognition.lang="en-US"
 
 recognition.onresult=e=>{
 let spoken=e.results[0][0].transcript.toLowerCase()
-if(spoken.includes(checkWord.innerText)){
+if(spoken.includes(currentCheckWord)){
 checkResult.innerHTML="✔ Correct"
 }else{
 checkResult.innerHTML="✖ Wrong"
