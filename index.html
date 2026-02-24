@@ -364,42 +364,53 @@ checkIPA.innerText = ""
 function hearWord(){if(checkWord.innerText)speak(checkWord.innerText)}
 
 function testWord(){
-if(!checkWord.innerText)return
-const btn=document.getElementById("testBtn")
-const wave=document.getElementById("wave")
-btn.classList.add("recording")
-wave.style.display="flex"
+  if(!currentCheckWord) return
 
-const SR=window.SpeechRecognition||window.webkitSpeechRecognition
-if(!SR){btn.classList.remove("recording");wave.style.display="none";return}
+  const btn = document.getElementById("testBtn")
+  const wave = document.getElementById("wave")
 
-const recognition=new SR()
-recognition.lang="en-US"
+  btn.classList.add("recording")
+  wave.style.display="flex"
 
-recognition.onresult=e=>{
-let spoken=e.results[0][0].transcript.toLowerCase()
-if(spoken.includes(currentCheckWord)){
-checkResult.innerHTML="✔ Correct"
-}else{
-checkResult.innerHTML="✖ Wrong"
-hearWord()
-}
-btn.classList.remove("recording")
-wave.style.display="none"
-recognition.stop()
-}
+  const SR = window.webkitSpeechRecognition
+  if(!SR){
+    alert("Speech recognition not supported")
+    return
+  }
 
-recognition.onerror=()=>{
-btn.classList.remove("recording")
-wave.style.display="none"
-}
+  const recognition = new SR()
+  recognition.lang = "en-US"
+  recognition.interimResults = false
+  recognition.maxAlternatives = 1
 
-recognition.onend=()=>{
-btn.classList.remove("recording")
-wave.style.display="none"
-}
+  recognition.onresult = e=>{
+    let spoken = e.results[0][0].transcript.toLowerCase().trim()
 
-recognition.start()
+    if(spoken.includes(currentCheckWord)){
+      checkResult.innerHTML="✔ Correct"
+      playDing()
+    }else{
+      checkResult.innerHTML="✘ Wrong"
+      playBeep()
+      hearWord()
+    }
+
+    updateScore()
+    btn.classList.remove("recording")
+    wave.style.display="none"
+  }
+
+  recognition.onerror = ()=>{
+    btn.classList.remove("recording")
+    wave.style.display="none"
+  }
+
+  recognition.onend = ()=>{
+    btn.classList.remove("recording")
+    wave.style.display="none"
+  }
+
+  recognition.start()
 }
 
 function exportCSV(){
