@@ -378,45 +378,15 @@ recognition.lang="en-US"
 
 recognition.onresult = e => {
 
-  // gabung semua hasil (Android sering pecah)
-  let transcript = ""
-  for(let i=0;i<e.results.length;i++){
-    transcript += e.results[i][0].transcript + " "
-  }
+  let spoken = (e.results[0][0].transcript || "").toLowerCase()
+  let target = (checkWord.innerText || "").toLowerCase()
 
-  // normalisasi
-  let spoken = transcript
-    .toLowerCase()
-    .replace(/[^a-z' ]/g,"")
-    .trim()
-
-  let target = (currentCheckWord || checkWord.innerText || "")
-    .toLowerCase()
-    .replace(/[^a-z' ]/g,"")
-    .trim()
-
-  if(!spoken || !target){
-    stopRec()
-    return
-  }
-
-  // cocokkan per kata
-  let spokenWords = spoken.split(/\s+/)
-  let targetWords = target.split(/\s+/)
-
-  let match = targetWords.every(t =>
-    spokenWords.some(s => s.includes(t))
-  )
-
-  if(match){
+  if(spoken.includes(target) && target){
     checkResult.innerHTML="✔ Correct"
   }else{
-    checkResult.innerHTML="✖ Wrong"
+    checkResult.innerHTML="✘ Wrong"
     hearWord()
   }
-
-  stopRec()
-}
 
   btn.classList.remove("recording")
   wave.style.display="none"
