@@ -378,32 +378,34 @@ recognition.lang="en-US"
 
 recognition.onresult = e => {
 
-  let transcript = ""
-  for(let i=0;i<e.results.length;i++){
-    transcript += e.results[i][0].transcript
-  }
-
-  let spoken = transcript.toLowerCase()
-  let target = (checkWord.innerText || "").toLowerCase()
-
-  if(spoken.includes(target) && target){
-    checkResult.innerHTML="✔ Correct"
-  }else{
-    checkResult.innerHTML="✘ Wrong"
-    hearWord()
-  }
-
-  btn.classList.remove("recording")
-  wave.style.display="none"
-  recognition.stop()
+let transcript = ""
+for(let i=0;i<e.results.length;i++){
+  transcript += e.results[i][0].transcript
 }
 
-recognition.onerror=()=>{
+let spoken = transcript.toLowerCase().replace(/[^a-z']/g,"")
+let target = (checkWord.innerText || "").toLowerCase().replace(/[^a-z']/g,"")
+
+if(!spoken) return
+
+if(spoken.includes(target)){
+  checkResult.innerHTML="✔ Correct"
+}else{
+  checkResult.innerHTML="✖ Wrong"
+  hearWord()
+}
+
+btn.classList.remove("recording")
+wave.style.display="none"
+recognition.stop()
+}
+
+recognition.onerror = ()=>{
 btn.classList.remove("recording")
 wave.style.display="none"
 }
 
-recognition.onend=()=>{
+recognition.onend = ()=>{
 btn.classList.remove("recording")
 wave.style.display="none"
 }
