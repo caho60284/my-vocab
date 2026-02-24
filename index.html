@@ -67,60 +67,20 @@ width:100%;margin-bottom:10px;padding:12px;border-radius:10px;border:1px solid #
 
 .recording{background:#3b82f6 !important;color:transparent !important}
 
-/* ===== FIX ANDROID MODAL CROP (SAFE) ===== */
+/* ANDROID SAFE FIX — tidak mempengaruhi iPhone */
 @supports (-webkit-touch-callout: none) {
-  /* iOS only → do nothing */
+  /* iOS detected → tidak diubah */
 }
 
 @supports not (-webkit-touch-callout: none) {
-  /* Android only */
-  .modal {
-    align-items: flex-start !important;
-    padding: 20px 0 !important;
-  }
-
-  .modal-content {
-    max-height: 90dvh !important;
-    overflow-y: auto !important;
-    margin: 20px auto !important;
-  }
-}  
-
-/* ANDROID MODAL HEIGHT FIX — TAMBAHAN SAJA */
-@supports not (-webkit-touch-callout: none) {
-  .modal-content{
-    max-height:92vh;
-    height:auto;
-    display:flex;
-    flex-direction:column;
-  }
-
-  .modal-body{
-    overflow:auto;
-    -webkit-overflow-scrolling:touch;
-  }
-
-  .modal-actions{
-    flex-shrink:0;
-    position:sticky;
-    bottom:0;
-    background:#fff;
-  }
-}  
-
-/* ANDROID: modal boleh lebih tinggi dari layar (scroll halaman) */
-@supports not (-webkit-touch-callout: none) {
-  .modal{
-    align-items:flex-start !important;
-    overflow:auto !important;
-  }
-
-  .modal-content{
-    max-height:none !important;
-    height:auto !important;
+  /* kemungkinan Android */
+  .modal-content,
+  .dialog,
+  .popup,
+  .card{
+    max-height: 90dvh;
   }
 }
-  
 </style>
 </head>
 
@@ -376,37 +336,17 @@ if(!SR){btn.classList.remove("recording");wave.style.display="none";return}
 const recognition=new SR()
 recognition.lang="en-US"
 
-recognition.onresult = e => {
-  let spoken = "";
-  for (let i = e.resultIndex; i < e.results.length; i++) {
-    if (e.results[i].isFinal) {
-      spoken += e.results[i][0].transcript;
-    }
-  }
-
-  spoken = spoken.toLowerCase().replace(/[^a-z']/g,"");
-  let target = currentCheckWord.toLowerCase().replace(/[^a-z']/g,"");
-
-  if(!spoken){
-    recognition.stop();
-    btn.classList.remove("recording");
-    wave.style.display="none";
-    return;
-  }
-
-  if(spoken.includes(target)){
-    checkResult.innerHTML="✔ Correct";
-    correct++;
-  }else{
-    checkResult.innerHTML="✖ Wrong";
-    playBeep();
-    hearWord();
-  }
-
-  updateScore();
-  btn.classList.remove("recording");
-  wave.style.display="none";
-  recognition.stop();
+recognition.onresult=e=>{
+let spoken=e.results[0][0].transcript.toLowerCase()
+if(spoken.includes(checkWord.innerText)){
+checkResult.innerHTML="✔ Correct"
+}else{
+checkResult.innerHTML="✖ Wrong"
+hearWord()
+}
+btn.classList.remove("recording")
+wave.style.display="none"
+recognition.stop()
 }
 
 recognition.onerror=()=>{
