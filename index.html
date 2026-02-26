@@ -433,7 +433,7 @@ const lines=r.result.split(/\r?\n/).slice(1)
 data=[]
 lines.forEach(l=>{
 if(!l.trim())return
-const c=l.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g)
+const c = l.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/)
 if(!c)return
 data.push({
 word:c[0]?.replace(/"/g,"")||"",
