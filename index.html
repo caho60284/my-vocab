@@ -476,9 +476,15 @@ function clearCheck(){
 }
 
 function updateChecker(){
-  const inp = document.getElementById("checkInput").value
-  document.getElementById("checkWord").innerText = inp
+  const raw = document.getElementById("checkInput").value.trim().toLowerCase()
+  const firstWord = raw.split(/\s+/)[0] || ""
+
+  document.getElementById("checkWord").innerText = firstWord
   document.getElementById("checkResult").innerHTML = ""
+
+  const found = data.find(v => v.word.toLowerCase() === firstWord)
+
+  document.getElementById("checkIPA").innerText = found ? v.pron : ""
 }
 
 render()
