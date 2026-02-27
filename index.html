@@ -180,8 +180,8 @@ width:100%;margin-bottom:10px;padding:12px;border-radius:10px;border:1px solid #
 <div class="modal-content">
 
 <div style="display:flex;gap:6px;align-items:center">
-  <input id="checkInput" placeholder="Type word..." oninput="updateChecker()">
-  <button onclick="clearCheck()" title="Clear">↺</button>
+  <input id="checkInput" placeholder="Type word..." oninput="loadCheckWord()">
+  <button onclick="clearCheck()" style="margin-left:6px">↻</button>
 </div>
 
 <div id="checkWord" style="font-size:22px;font-weight:700"></div>
@@ -471,6 +471,7 @@ i.click()
 function clearCheck(){
   const inp = document.getElementById("checkInput")
   inp.value = ""
+  loadCheckWord()   // ← WAJIB supaya IPA & arti reset
   inp.focus()
 }
 
