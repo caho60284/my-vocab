@@ -398,10 +398,12 @@ recognition.onresult = e => {
     .toLowerCase()
     .replace(/[^a-z']/g,"")
 
-  if(spoken.includes(target) && target.length>0){
-  checkResult.innerHTML = "<div style='margin-top:6px'>✔ Correct</div>"
+  const resultEl = document.getElementById("checkResult")
+
+if(spoken.includes(target) && target.length>0){
+  resultEl.innerHTML = "✔ Correct"
 }else{
-  checkResult.innerHTML = "<div style='margin-top:6px'>✖ Wrong</div>"
+  resultEl.innerHTML = "✖ Wrong"
   hearWord()
 }
 
