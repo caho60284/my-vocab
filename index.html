@@ -476,27 +476,38 @@ function clearCheck(){
 }
 
 function updateChecker(){
-  const raw = document.getElementById("checkInput").value
-    .toLowerCase()
-    .trim()
+  const inp = document.getElementById("checkInput").value.trim().toLowerCase()
+  const wordEl = document.getElementById("checkWord")
+  const ipaEl  = document.getElementById("checkIPA")
+  const resEl  = document.getElementById("checkResult")
 
-  const words = raw.split(/\s+/)
+  resEl.innerHTML = ""
 
-  let foundWord = ""
-  let foundData = null
+  if(!inp){
+    wordEl.innerText = ""
+    ipaEl.innerText = ""
+    return
+  }
 
-  for(const w of words){
-    const f = data.find(v => v.word.toLowerCase() === w)
-    if(f){
-      foundWord = w
-      foundData = f
-      break
+  // cari exact dulu
+  let found = data.find(v => v.word.toLowerCase() === inp)
+
+  // kalau kalimat → ambil kata pertama yg ada di vocab
+  if(!found){
+    const parts = inp.split(/\s+/)
+    for(const p of parts){
+      found = data.find(v => v.word.toLowerCase() === p)
+      if(found) break
     }
   }
 
-  document.getElementById("checkWord").innerText = foundWord
-  document.getElementById("checkResult").innerHTML = ""
-  document.getElementById("checkIPA").innerText = foundData ? foundData.pron : ""
+  if(found){
+    wordEl.innerText = found.word
+    ipaEl.innerText  = found.pron || ""
+  }else{
+    wordEl.innerText = inp
+    ipaEl.innerText  = ""
+  }
 }
 
 render()
