@@ -38,7 +38,10 @@ main{padding:14px}
 
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;padding:14px;z-index:99}
 .modal-content{background:#fff;border-radius:16px;padding:14px;width:100%;max-width:420px}
-.modal-content input,.modal-content textarea{width:100%;margin-bottom:10px;padding:12px;border-radius:10px;border:1px solid #ccc;font-size:16px}
+
+.modal-content input,.modal-content textarea{
+width:100%;margin-bottom:10px;padding:12px;border-radius:10px;border:1px solid #ccc;font-size:16px
+}
 
 .modal-actions{display:flex;gap:10px;margin-top:6px}
 .modal-actions button{flex:1}
@@ -48,7 +51,6 @@ main{padding:14px}
 .cancel{background:#bbb}
 .audio{background:#2ecc71;color:#fff}
 
-/* waveform */
 .waveBtn{position:relative;overflow:hidden}
 .wave{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:3px}
 .wave span{width:3px;height:10px;background:white;border-radius:2px;animation:wave 1s infinite}
@@ -56,10 +58,13 @@ main{padding:14px}
 .wave span:nth-child(3){animation-delay:.2s}
 .wave span:nth-child(4){animation-delay:.3s}
 .wave span:nth-child(5){animation-delay:.4s}
+
 @keyframes wave{
-0%,100%{height:6px}
-50%{height:16px}
+0%,100%{height:8px}
+50%{height:18px}
 }
+
+.recording{background:#3b82f6 !important;color:transparent !important}
 </style>
 </head>
 
@@ -70,13 +75,13 @@ main{padding:14px}
 <div class="count" id="count"></div>
 
 <div class="controls">
-<button class="import" onclick="importCSV()">Import</button>
-<button class="export" onclick="exportCSV()">Export</button>
-<button class="deleteall" onclick="deleteAll()">Delete All</button>
-<button class="favbtn" onclick="toggleFav()">Favorites</button>
-<button class="refresh" onclick="shuffle()">🔄</button>
-<button class="pronounce" onclick="togglePron()">Pronounce</button>
-<button class="add" onclick="openAdd()">+</button>
+<button class="import" onclick="importCSV()">📥 Import</button>
+<button class="export" onclick="exportCSV()">📤 Export</button>
+<button class="deleteall" onclick="deleteAll()">🧨 Delete All</button>
+<button class="favbtn" onclick="toggleFavView()">⭐ Favorites</button>
+<button class="refresh" onclick="resetView()">🔄</button>
+<button class="pronounce" onclick="openChecker()">Pronounce</button>
+<button class="add" onclick="openModal()">＋</button>
 </div>
 
 <input class="search" id="search" placeholder="Search word or meaning..." oninput="render()">
@@ -86,80 +91,156 @@ main{padding:14px}
 
 <div class="modal" id="modal">
 <div class="modal-content">
-<input id="wordInput" placeholder="Word">
-<input id="pronInput" placeholder="IPA">
-<input id="meaningInput" placeholder="Meaning">
+
+<input id="word" placeholder="Word">
+<input id="pron" placeholder="Pronunciation">
+<textarea id="meaning" rows="2" placeholder="Meaning"></textarea>
+
+<textarea id="ex1" rows="2" placeholder="Example 1"></textarea>
+<textarea id="ipa1" rows="2" placeholder="IPA Example 1"></textarea>
+<textarea id="tr1" rows="2" placeholder="Translation 1"></textarea>
+
+<textarea id="ex2" rows="2" placeholder="Example 2"></textarea>
+<textarea id="ipa2" rows="2" placeholder="IPA Example 2"></textarea>
+<textarea id="tr2" rows="2" placeholder="Translation 2"></textarea>
+
 <div class="modal-actions">
-<button class="save" onclick="saveWord()">Save</button>
-<button class="delete" onclick="deleteWord()">Delete</button>
+<button class="audio" onclick="speakExample(1)">🔊 Ex1</button>
+<button class="audio" onclick="speakExample(2)">🔊 Ex2</button>
+</div>
+
+<div class="modal-actions">
+<button class="save" onclick="save()">Save</button>
+<button class="delete" onclick="remove()">Delete</button>
 <button class="cancel" onclick="closeModal()">Cancel</button>
 </div>
+
+</div>
+</div>
+
+<div class="modal" id="checkerModal">
+<div class="modal-content">
+
+<input id="checkInput" placeholder="Type word..." oninput="loadCheckWord()">
+
+<div id="checkWord" style="font-size:22px;font-weight:700"></div>
+<div id="checkIPA" style="color:#26a69a"></div>
+<div id="checkResult"></div>
+
+<div class="modal-actions">
+<button class="audio" onclick="hearWord()">Hear</button>
+
+<button id="testBtn" class="save waveBtn" onclick="testWord()">
+<span class="label">Test</span>
+<div class="wave" id="wave" style="display:none">
+<span></span><span></span><span></span><span></span><span></span>
+</div>
+</button>
+
+<button class="cancel" onclick="closeChecker()">Close</button>
+</div>
+
 </div>
 </div>
 
 <script>
-let data=[]
-let showFav=false
-let showPron=true
+let data=JSON.parse(localStorage.getItem("vocab")||"[]")
+let editIndex=null
+let favOnly=false
 
 function render(){
 const list=document.getElementById("list")
 const q=document.getElementById("search").value.toLowerCase()
 list.innerHTML=""
-let filtered=data.filter(v=>{
-return (!showFav||v.fav)&&
-(v.word.toLowerCase().includes(q)||v.meaning.toLowerCase().includes(q))
-})
-document.getElementById("count").innerText="Total vocabulary: "+filtered.length+" words"
 
-filtered.forEach((v,i)=>{
-const div=document.createElement("div")
-div.className="card"
-div.innerHTML=`
-<div class="word">${v.word}</div>
-${showPron?`<div class="pron">${v.pron}</div>`:""}
-<div class="meaning">${v.meaning}</div>
+let arr=data.filter(v=>{
+if(favOnly && !v.fav) return false
+return v.word.toLowerCase().includes(q) || (v.meaning||"").toLowerCase().includes(q)
+})
+
+document.getElementById("count").innerText=`Total vocabulary: ${data.length} words`
+
+arr.forEach(v=>{
+const i=data.indexOf(v)
+const d=document.createElement("div")
+d.className="card"
+d.innerHTML=`
+<div class="word" onclick="edit(${i})">${v.word}</div>
+<div class="pron">${v.pron||""}</div>
+<div class="meaning">${v.meaning||""}</div>
 <div class="icons">
-<span onclick="hear('${v.word}')">🔊</span>
+<span onclick="speak('${v.word}')">🔊</span>
+<span onclick="speakSlow('${v.word}')">🐢</span>
 </div>
-<div class="star" onclick="fav(${i})">${v.fav?"★":"☆"}</div>
+<div class="star" onclick="toggleFav(${i})">${v.fav?"⭐":"☆"}</div>
 `
-list.appendChild(div)
+list.appendChild(d)
 })
+
+localStorage.setItem("vocab",JSON.stringify(data))
 }
 
-function fav(i){
-data[i].fav=!data[i].fav
-render()
+function speak(t){speechSynthesis.speak(new SpeechSynthesisUtterance(t))}
+function speakSlow(t){let u=new SpeechSynthesisUtterance(t);u.rate=0.6;speechSynthesis.speak(u)}
+
+function openChecker(){checkerModal.style.display="flex";checkInput.focus()}
+function closeChecker(){checkerModal.style.display="none"}
+
+function hearWord(){
+if(checkWord.innerText)speak(checkWord.innerText)
 }
 
-function toggleFav(){
-showFav=!showFav
-render()
+function testWord(){
+if(!checkWord.innerText)return
+const btn=document.getElementById("testBtn")
+const wave=document.getElementById("wave")
+btn.classList.add("recording")
+wave.style.display="flex"
+
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition
+if(!SR){btn.classList.remove("recording");wave.style.display="none";return}
+
+const recognition=new SR()
+recognition.lang="en-US"
+
+recognition.onresult = e => {
+  let spoken = (e.results[0][0].transcript || "")
+    .toLowerCase()
+    .replace(/[^a-z']/g,"")
+
+  let target = (checkWord.innerText || "")
+    .toLowerCase()
+    .replace(/[^a-z']/g,"")
+
+  if(spoken.includes(target) && target.length>0){
+    checkResult.innerHTML="✔ Correct"
+  }else{
+    checkResult.innerHTML="✖ Wrong"
+    hearWord()
+  }
+
+  btn.classList.remove("recording")
+  wave.style.display="none"
+  recognition.stop()
 }
 
-function togglePron(){
-showPron=!showPron
-render()
+recognition.onerror=()=>{
+btn.classList.remove("recording")
+wave.style.display="none"
 }
 
-function shuffle(){
-data.sort(()=>Math.random()-0.5)
-render()
+recognition.onend=()=>{
+btn.classList.remove("recording")
+wave.style.display="none"
 }
 
-function speak(t){
-const u=new SpeechSynthesisUtterance(t)
-u.lang="en-US"
-speechSynthesis.speak(u)
+recognition.start()
 }
-
-function hear(w){speak(w)}
 
 function exportCSV(){
-let csv="word,pron,meaning,fav\n"
+let csv="word,pron,meaning,ex1,ipa1,tr1,ex2,ipa2,tr2,fav\n"
 data.forEach(v=>{
-csv+=`${v.word},${v.pron},${v.meaning},${v.fav?1:0}\n`
+csv+=`"${v.word}","${v.pron}","${v.meaning}","${v.ex1}","${v.ipa1}","${v.tr1}","${v.ex2}","${v.ipa2}","${v.tr2}","${v.fav?1:0}"\n`
 })
 const a=document.createElement("a")
 a.href=URL.createObjectURL(new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8;"}))
@@ -178,12 +259,20 @@ const lines=r.result.split(/\r?\n/).slice(1)
 data=[]
 lines.forEach(l=>{
 if(!l.trim())return
-const c=l.split(",")
+const c = l.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/)
+if(!c)return
 data.push({
-word:c[0]||"",
-pron:c[1]||"",
-meaning:c[2]||"",
-fav:c[3]=="1"
+word:c[0]?.replace(/"/g,"")||"",
+pron:c[1]?.replace(/"/g,"")||"",
+meaning:c[2]?.replace(/"/g,"")||"",
+ex1:c[3]?.replace(/"/g,"")||"",
+ipa1:c[4]?.replace(/"/g,"")||"",
+tr1:c[5]?.replace(/"/g,"")||"",
+ex2:c[6]?.replace(/"/g,"")||"",
+ipa2:c[7]?.replace(/"/g,"")||"",
+tr2:c[8]?.replace(/"/g,"")||"",
+fav:((c[9] ?? c[c.length-1]) || "")
+       .replace(/[^0-9]/g,"")=="1"
 })
 })
 render()
@@ -192,13 +281,6 @@ alert("Import sukses")
 r.readAsText(e.target.files[0])
 }
 i.click()
-}
-
-function deleteAll(){
-if(confirm("Delete all?")){
-data=[]
-render()
-}
 }
 
 render()
