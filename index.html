@@ -476,38 +476,12 @@ function clearCheck(){
 }
 
 function updateChecker(){
-  const inp = document.getElementById("checkInput").value.trim().toLowerCase()
-  const wordEl = document.getElementById("checkWord")
-  const ipaEl  = document.getElementById("checkIPA")
-  const resEl  = document.getElementById("checkResult")
+  const inp = document.getElementById("checkInput").value.toLowerCase()
+  const found = data.find(v=>v.word.toLowerCase()==inp)
 
-  resEl.innerHTML = ""
-
-  if(!inp){
-    wordEl.innerText = ""
-    ipaEl.innerText = ""
-    return
-  }
-
-  // cari exact dulu
-  let found = data.find(v => v.word.toLowerCase() === inp)
-
-  // kalau kalimat → ambil kata pertama yg ada di vocab
-  if(!found){
-    const parts = inp.split(/\s+/)
-    for(const p of parts){
-      found = data.find(v => v.word.toLowerCase() === p)
-      if(found) break
-    }
-  }
-
-  if(found){
-    wordEl.innerText = found.word
-    ipaEl.innerText  = found.pron || ""
-  }else{
-    wordEl.innerText = inp
-    ipaEl.innerText  = ""
-  }
+  document.getElementById("checkWord").innerText = found ? found.word : inp
+  document.getElementById("checkIPA").innerText  = found ? found.pron : ""
+  document.getElementById("checkResult").innerHTML = ""
 }
 
 render()
