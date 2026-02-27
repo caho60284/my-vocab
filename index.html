@@ -51,12 +51,6 @@ width:100%;margin-bottom:10px;padding:12px;border-radius:10px;border:1px solid #
 .cancel{background:#bbb}
 .audio{background:#2ecc71;color:#fff}
 
-#checkResult{
-  margin-top:12px;
-  margin-bottom:12px;
-  font-size:18px;
-}
-
 /* waveform */
 .waveBtn{position:relative;overflow:hidden}
 .wave{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:3px}
@@ -347,16 +341,15 @@ let eng = await fetchEnglishMeaning(raw)
 if(indo && indo.toLowerCase() !== raw.toLowerCase()){
   checkResult.innerHTML = "Arti: " + indo
 
-  // IPA Inggris (ambil kata pertama saja)
-try{
-  const firstWord = raw.toLowerCase().split(/\s+/)[0]
-  let r = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${firstWord}`)
-  let j = await r.json()
-  let ipa = j[0]?.phonetics?.find(p=>p.text)?.text || ""
-  checkIPA.innerText = ipa
-}catch{
-  checkIPA.innerText=""
-}
+  // IPA Inggris
+  try{
+    let r = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${raw.toLowerCase()}`)
+    let j = await r.json()
+    let ipa = j[0]?.phonetics?.find(p=>p.text)?.text || ""
+    checkIPA.innerText = ipa
+  }catch{
+    checkIPA.innerText=""
+  }
   return
 }
 
@@ -483,26 +476,8 @@ function clearCheck(){
 }
 
 function updateChecker(){
-  const raw = document.getElementById("checkInput").value
-  const inp = raw.trim().toLowerCase()
-
-  const tokens = inp.match(/[a-zA-Z']+/g) || []
-
-  let ipaParts = []
-
-  tokens.forEach(t=>{
-    const found = data.find(d =>
-      d.word.toLowerCase() === t ||
-      d.meaning.toLowerCase().includes(t)
-    )
-
-    if(found && found.pron){
-      ipaParts.push(found.pron)
-    }
-  })
-
-  document.getElementById("checkWord").innerText = raw
-  document.getElementById("checkIPA").innerText = ipaParts.join(" ")
+  const inp = document.getElementById("checkInput").value
+  document.getElementById("checkWord").innerText = inp
   document.getElementById("checkResult").innerHTML = ""
 }
 
