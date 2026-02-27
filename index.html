@@ -117,7 +117,12 @@ width:100%;margin-bottom:10px;padding:12px;border-radius:10px;border:1px solid #
 
 <div id="checkWord" style="font-size:22px;font-weight:700"></div>
 <div id="checkIPA" style="color:#26a69a"></div>
-<div id="checkResult"></div>
+
+<!-- MEANING TERPISAH -->
+<div id="checkMeaning" style="margin-top:4px"></div>
+
+<!-- RESULT TERPISAH -->
+<div id="checkResult" style="margin-top:6px;font-weight:600"></div>
 
 <div class="modal-actions">
 <button class="audio" onclick="hearWord()">Hear</button>
@@ -306,6 +311,7 @@ let raw = checkInput.value.trim()
 if(!raw){
   checkWord.innerText=""
   checkIPA.innerText=""
+  checkMeaning.innerHTML=""
   checkResult.innerHTML=""
   return
 }
@@ -316,26 +322,22 @@ let indo = await fetchIndoMeaning(raw)
 let eng = await fetchEnglishMeaning(raw)
 
 if(indo && indo.toLowerCase() !== raw.toLowerCase()){
-  checkResult.innerHTML = "Arti: " + indo
-  try{
-    let r = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${raw.toLowerCase()}`)
-    let j = await r.json()
-    let ipa = j[0]?.phonetics?.find(p=>p.text)?.text || ""
-    checkIPA.innerText = ipa
-  }catch{
-    checkIPA.innerText=""
-  }
+  checkMeaning.innerHTML = "Arti: " + indo
+  checkIPA.innerText=""
+  checkResult.innerHTML=""
   return
 }
 
 if(eng && eng.toLowerCase() !== raw.toLowerCase()){
-  checkResult.innerHTML = "English: " + eng
+  checkMeaning.innerHTML = "English: " + eng
   checkIPA.innerText=""
+  checkResult.innerHTML=""
   return
 }
 
-checkResult.innerHTML=""
+checkMeaning.innerHTML=""
 checkIPA.innerText=""
+checkResult.innerHTML=""
 }
 
 function hearWord(){
