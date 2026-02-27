@@ -320,7 +320,7 @@ return ""
 
 async function loadCheckWord(){
 let raw = checkInput.value.trim()
-
+checkEnglish=""
 if(!raw){
   checkWord.innerText=""
   checkIPA.innerText=""
@@ -337,9 +337,7 @@ let eng = await fetchEnglishMeaning(raw)
 // jika hasil Indo berbeda → berarti input Inggris
 if(indo && indo.toLowerCase() !== raw.toLowerCase()){
   checkResult.innerHTML = "Arti: " + indo
-if(indo && indo.toLowerCase() !== raw.toLowerCase()){
-  checkResult.innerHTML = "Arti: " + indo
-  checkEnglish = raw
+
   // IPA Inggris
   try{
     let r = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${raw.toLowerCase()}`)
@@ -366,7 +364,11 @@ checkIPA.innerText = ""
 }
 
 function hearWord(){
-  if(checkEnglish) speak(checkEnglish)
+  if(checkEnglish){
+    speak(checkEnglish)
+  }else if(checkWord.innerText){
+    speak(checkWord.innerText)
+  }
 }
 
 function testWord(){
@@ -388,7 +390,7 @@ recognition.onresult = e => {
     .toLowerCase()
     .replace(/[^a-z']/g,"")
 
-  let target = (checkEnglish || "")
+  let target = (checkEnglish || checkWord.innerText || "")
     .toLowerCase()
     .replace(/[^a-z']/g,"")
 
