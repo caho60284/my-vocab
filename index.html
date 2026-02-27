@@ -51,6 +51,7 @@ width:100%;margin-bottom:10px;padding:12px;border-radius:10px;border:1px solid #
 .cancel{background:#bbb}
 .audio{background:#2ecc71;color:#fff}
 
+/* waveform */
 .waveBtn{position:relative;overflow:hidden}
 .wave{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:3px}
 .wave span{width:3px;height:10px;background:white;border-radius:2px;animation:wave 1s infinite}
@@ -65,6 +66,61 @@ width:100%;margin-bottom:10px;padding:12px;border-radius:10px;border:1px solid #
 }
 
 .recording{background:#3b82f6 !important;color:transparent !important}
+
+/* ===== FIX ANDROID MODAL CROP (SAFE) ===== */
+@supports (-webkit-touch-callout: none) {
+  /* iOS only → do nothing */
+}
+
+@supports not (-webkit-touch-callout: none) {
+  /* Android only */
+  .modal {
+    align-items: flex-start !important;
+    padding: 20px 0 !important;
+  }
+
+  .modal-content {
+    max-height: 90dvh !important;
+    overflow-y: auto !important;
+    margin: 20px auto !important;
+  }
+}  
+
+/* ANDROID MODAL HEIGHT FIX — TAMBAHAN SAJA */
+@supports not (-webkit-touch-callout: none) {
+  .modal-content{
+    max-height:92vh;
+    height:auto;
+    display:flex;
+    flex-direction:column;
+  }
+
+  .modal-body{
+    overflow:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  .modal-actions{
+    flex-shrink:0;
+    position:sticky;
+    bottom:0;
+    background:#fff;
+  }
+}  
+
+/* ANDROID: modal boleh lebih tinggi dari layar (scroll halaman) */
+@supports not (-webkit-touch-callout: none) {
+  .modal{
+    align-items:flex-start !important;
+    overflow:auto !important;
+  }
+
+  .modal-content{
+    max-height:none !important;
+    height:auto !important;
+  }
+}
+  
 </style>
 </head>
 
@@ -89,6 +145,7 @@ width:100%;margin-bottom:10px;padding:12px;border-radius:10px;border:1px solid #
 
 <main id="list"></main>
 
+<!-- vocab modal 9 kolom -->
 <div class="modal" id="modal">
 <div class="modal-content">
 
@@ -118,6 +175,7 @@ width:100%;margin-bottom:10px;padding:12px;border-radius:10px;border:1px solid #
 </div>
 </div>
 
+<!-- checker -->
 <div class="modal" id="checkerModal">
 <div class="modal-content">
 
@@ -180,15 +238,130 @@ list.appendChild(d)
 localStorage.setItem("vocab",JSON.stringify(data))
 }
 
+function openModal(){
+editIndex=null
+word.value=pron.value=meaning.value=""
+ex1.value=ipa1.value=tr1.value=""
+ex2.value=ipa2.value=tr2.value=""
+modal.style.display="flex"
+}
+function closeModal(){modal.style.display="none"}
+
+function save(){
+const v={
+word:word.value,
+pron:pron.value,
+meaning:meaning.value,
+ex1:ex1.value,
+ipa1:ipa1.value,
+tr1:tr1.value,
+ex2:ex2.value,
+ipa2:ipa2.value,
+tr2:tr2.value,
+fav:editIndex!==null?data[editIndex].fav:false
+}
+if(editIndex===null)data.push(v)
+else data[editIndex]=v
+closeModal();render()
+}
+
+function edit(i){
+editIndex=i
+const v=data[i]
+word.value=v.word||""
+pron.value=v.pron||""
+meaning.value=v.meaning||""
+ex1.value=v.ex1||""
+ipa1.value=v.ipa1||""
+tr1.value=v.tr1||""
+ex2.value=v.ex2||""
+ipa2.value=v.ipa2||""
+tr2.value=v.tr2||""
+modal.style.display="flex"
+}
+
+function remove(){
+if(editIndex!==null){data.splice(editIndex,1);closeModal();render()}
+}
+
+function deleteAll(){if(confirm("Delete all vocabulary?")){data=[];render()}}
+function toggleFav(i){data[i].fav=!data[i].fav;render()}
+function toggleFavView(){favOnly=!favOnly;render()}
+function resetView(){favOnly=false;search.value="";render()}
+
 function speak(t){speechSynthesis.speak(new SpeechSynthesisUtterance(t))}
 function speakSlow(t){let u=new SpeechSynthesisUtterance(t);u.rate=0.6;speechSynthesis.speak(u)}
+function speakExample(n){
+let txt=n===1?ex1.value:ex2.value
+if(txt)speak(txt)
+}
 
 function openChecker(){checkerModal.style.display="flex";checkInput.focus()}
 function closeChecker(){checkerModal.style.display="none"}
 
-function hearWord(){
-if(checkWord.innerText)speak(checkWord.innerText)
+async function fetchIndoMeaning(text){
+try{
+let r=await fetch("https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=id&dt=t&q="+encodeURIComponent(text))
+let j=await r.json()
+return j[0]?.map(x=>x[0]).join("")||""
+}catch{return""}
 }
+
+async function fetchEnglishMeaning(text){
+try{
+let r = await fetch("https://translate.googleapis.com/translate_a/single?client=gtx&sl=id&tl=en&dt=t&q=" + encodeURIComponent(text))
+let j = await r.json()
+return j[0]?.map(x=>x[0]).join("") || ""
+}catch{
+return ""
+}
+}
+
+async function loadCheckWord(){
+let raw = checkInput.value.trim()
+
+if(!raw){
+  checkWord.innerText=""
+  checkIPA.innerText=""
+  checkResult.innerHTML=""
+  return
+}
+
+checkWord.innerText = raw
+
+// translate dua arah
+let indo = await fetchIndoMeaning(raw)
+let eng = await fetchEnglishMeaning(raw)
+
+// jika hasil Indo berbeda → berarti input Inggris
+if(indo && indo.toLowerCase() !== raw.toLowerCase()){
+  checkResult.innerHTML = "Arti: " + indo
+
+  // IPA Inggris
+  try{
+    let r = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${raw.toLowerCase()}`)
+    let j = await r.json()
+    let ipa = j[0]?.phonetics?.find(p=>p.text)?.text || ""
+    checkIPA.innerText = ipa
+  }catch{
+    checkIPA.innerText=""
+  }
+  return
+}
+
+// jika hasil Eng berbeda → berarti input Indo
+if(eng && eng.toLowerCase() !== raw.toLowerCase()){
+  checkResult.innerHTML = "English: " + eng
+  checkIPA.innerText = ""
+  return
+}
+
+// fallback
+checkResult.innerHTML = ""
+checkIPA.innerText = ""
+}
+
+function hearWord(){if(checkWord.innerText)speak(checkWord.innerText)}
 
 function testWord(){
 if(!checkWord.innerText)return
@@ -204,6 +377,7 @@ const recognition=new SR()
 recognition.lang="en-US"
 
 recognition.onresult = e => {
+
   let spoken = (e.results[0][0].transcript || "")
     .toLowerCase()
     .replace(/[^a-z']/g,"")
