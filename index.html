@@ -179,7 +179,10 @@ width:100%;margin-bottom:10px;padding:12px;border-radius:10px;border:1px solid #
 <div class="modal" id="checkerModal">
 <div class="modal-content">
 
-<input id="checkInput" placeholder="Type word..." oninput="loadCheckWord()">
+<div style="display:flex;gap:6px;align-items:center">
+  <input id="checkInput" placeholder="Type word..." style="flex:1">
+  <button onclick="clearCheck()" title="Clear">↺</button>
+</div>
 
 <div id="checkWord" style="font-size:22px;font-weight:700"></div>
 <div id="checkIPA" style="color:#26a69a"></div>
@@ -465,6 +468,11 @@ r.readAsText(e.target.files[0])
 i.click()
 }
 
+function clearCheck(){
+  const inp = document.getElementById("checkInput")
+  inp.value = ""
+  inp.focus()
+}
 render()
 </script>
 
