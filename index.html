@@ -476,14 +476,27 @@ function clearCheck(){
 }
 
 function updateChecker(){
-  const raw = document.getElementById("checkInput").value.trim().toLowerCase()
-  const firstWord = raw.split(/\s+/)[0] || ""
+  const raw = document.getElementById("checkInput").value
+    .toLowerCase()
+    .trim()
 
-  document.getElementById("checkWord").innerText = firstWord
+  const words = raw.split(/\s+/)
+
+  let foundWord = ""
+  let foundData = null
+
+  for(const w of words){
+    const f = data.find(v => v.word.toLowerCase() === w)
+    if(f){
+      foundWord = w
+      foundData = f
+      break
+    }
+  }
+
+  document.getElementById("checkWord").innerText = foundWord
   document.getElementById("checkResult").innerHTML = ""
-
-  const found = data.find(v => v.word.toLowerCase() === firstWord)
-  document.getElementById("checkIPA").innerText = found ? found.pron : ""
+  document.getElementById("checkIPA").innerText = foundData ? foundData.pron : ""
 }
 
 render()
