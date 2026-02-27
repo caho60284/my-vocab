@@ -180,7 +180,7 @@ width:100%;margin-bottom:10px;padding:12px;border-radius:10px;border:1px solid #
 <div class="modal-content">
 
 <div style="display:flex;gap:6px;align-items:center">
-  <input id="checkInput" placeholder="Type word..." style="flex:1">
+  <input id="checkInput" placeholder="Type word..." oninput="syncCheckInput()">
   <button onclick="clearCheck()" title="Clear">↺</button>
 </div>
 
@@ -474,6 +474,13 @@ function clearCheck(){
   inp.focus()
 }
 render()
+
+function syncCheckInput(){
+  const inp = document.getElementById("checkInput").value
+  document.getElementById("checkWord").innerText = inp
+  document.getElementById("checkResult").innerHTML = ""
+}
+
 </script>
 
 </body>
