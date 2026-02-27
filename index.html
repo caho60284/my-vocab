@@ -477,7 +477,12 @@ function clearCheck(){
 
 function updateChecker(){
   const inp = document.getElementById("checkInput").value.toLowerCase()
-  const found = data.find(v=>v.word.toLowerCase()==inp)
+
+  let found = data.find(v=>v.word.toLowerCase()==inp)
+
+  if(!found){
+    found = data.find(v=>inp.includes(v.word.toLowerCase()))
+  }
 
   document.getElementById("checkWord").innerText = found ? found.word : inp
   document.getElementById("checkIPA").innerText  = found ? found.pron : ""
