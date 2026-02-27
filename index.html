@@ -341,15 +341,16 @@ let eng = await fetchEnglishMeaning(raw)
 if(indo && indo.toLowerCase() !== raw.toLowerCase()){
   checkResult.innerHTML = "Arti: " + indo
 
-  // IPA Inggris
-  try{
-    let r = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${raw.toLowerCase()}`)
-    let j = await r.json()
-    let ipa = j[0]?.phonetics?.find(p=>p.text)?.text || ""
-    checkIPA.innerText = ipa
-  }catch{
-    checkIPA.innerText=""
-  }
+  // IPA Inggris (ambil kata pertama saja)
+try{
+  const firstWord = raw.toLowerCase().split(/\s+/)[0]
+  let r = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${firstWord}`)
+  let j = await r.json()
+  let ipa = j[0]?.phonetics?.find(p=>p.text)?.text || ""
+  checkIPA.innerText = ipa
+}catch{
+  checkIPA.innerText=""
+}
   return
 }
 
