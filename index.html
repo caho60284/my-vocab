@@ -6,145 +6,203 @@
 <title>My Vocab Ultimate</title>
 
 <style>
-/* ==== SEMUA STYLE KAMU TIDAK DIUBAH ==== */
+*{box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+body{margin:0;background:#f3f5f9}
+
+header{position:sticky;top:0;background:#fff;padding:14px;box-shadow:0 2px 6px rgba(0,0,0,.08);z-index:10}
+h1{margin:0;font-size:22px}
+.count{font-size:13px;color:#666;margin-top:2px}
+
+.controls{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+button{border:none;border-radius:10px;padding:10px 12px;font-size:14px}
+
+.import{background:#1e88e5;color:#fff}
+.export{background:#6a5acd;color:#fff}
+.deleteall{background:#e53935;color:#fff}
+.favbtn{background:#f39c12;color:#fff}
+.refresh{background:#27ae60;color:#fff}
+.pronounce{background:#14b8a6;color:#fff}
+.add{background:#e3f2fd}
+
+.search{margin-top:10px;width:100%;padding:12px;border-radius:12px;border:1px solid #ccc;font-size:16px}
+
+main{padding:14px}
+
+.card{background:#fff;border-radius:14px;padding:14px;margin-bottom:12px;position:relative}
+.word{font-weight:700;font-size:18px;cursor:pointer}
+.pron{color:#26a69a;margin-top:2px}
+.meaning{margin-top:2px}
+.icons{margin-top:6px}
+.icons span{font-size:20px;margin-right:8px}
+.star{position:absolute;right:12px;top:12px;font-size:22px;cursor:pointer}
+
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;padding:14px;z-index:99}
+.modal-content{background:#fff;border-radius:16px;padding:14px;width:100%;max-width:420px}
+.modal-content input,.modal-content textarea{width:100%;margin-bottom:10px;padding:12px;border-radius:10px;border:1px solid #ccc;font-size:16px}
+
+.modal-actions{display:flex;gap:10px;margin-top:6px}
+.modal-actions button{flex:1}
+
+.save{background:#1e88e5;color:#fff}
+.delete{background:#e53935;color:#fff}
+.cancel{background:#bbb}
+.audio{background:#2ecc71;color:#fff}
+
+/* waveform */
+.waveBtn{position:relative;overflow:hidden}
+.wave{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:3px}
+.wave span{width:3px;height:10px;background:white;border-radius:2px;animation:wave 1s infinite}
+.wave span:nth-child(2){animation-delay:.1s}
+.wave span:nth-child(3){animation-delay:.2s}
+.wave span:nth-child(4){animation-delay:.3s}
+.wave span:nth-child(5){animation-delay:.4s}
+@keyframes wave{
+0%,100%{height:6px}
+50%{height:16px}
+}
 </style>
 </head>
 
 <body>
-<!-- ==== SEMUA HTML KAMU TIDAK DIUBAH ==== -->
+
+<header>
+<h1>📘 My Vocab Ultimate</h1>
+<div class="count" id="count"></div>
+
+<div class="controls">
+<button class="import" onclick="importCSV()">Import</button>
+<button class="export" onclick="exportCSV()">Export</button>
+<button class="deleteall" onclick="deleteAll()">Delete All</button>
+<button class="favbtn" onclick="toggleFav()">Favorites</button>
+<button class="refresh" onclick="shuffle()">🔄</button>
+<button class="pronounce" onclick="togglePron()">Pronounce</button>
+<button class="add" onclick="openAdd()">+</button>
+</div>
+
+<input class="search" id="search" placeholder="Search word or meaning..." oninput="render()">
+</header>
+
+<main id="list"></main>
+
+<div class="modal" id="modal">
+<div class="modal-content">
+<input id="wordInput" placeholder="Word">
+<input id="pronInput" placeholder="IPA">
+<input id="meaningInput" placeholder="Meaning">
+<div class="modal-actions">
+<button class="save" onclick="saveWord()">Save</button>
+<button class="delete" onclick="deleteWord()">Delete</button>
+<button class="cancel" onclick="closeModal()">Cancel</button>
+</div>
+</div>
+</div>
 
 <script>
-let data=JSON.parse(localStorage.getItem("vocab")||"[]")
-let editIndex=null
-let favOnly=false
+let data=[]
+let showFav=false
+let showPron=true
 
-/* =========================
-   TAMBAHAN: ENGLISH WORD
-========================= */
-let currentCheckWord=""
+function render(){
+const list=document.getElementById("list")
+const q=document.getElementById("search").value.toLowerCase()
+list.innerHTML=""
+let filtered=data.filter(v=>{
+return (!showFav||v.fav)&&
+(v.word.toLowerCase().includes(q)||v.meaning.toLowerCase().includes(q))
+})
+document.getElementById("count").innerText="Total vocabulary: "+filtered.length+" words"
 
-/* =========================
-   SEMUA KODE KAMU ASLI
-========================= */
-
-function speak(t){speechSynthesis.speak(new SpeechSynthesisUtterance(t))}
-
-/* =========================
-   CHECKER LOAD
-========================= */
-async function loadCheckWord(){
-let raw = checkInput.value.trim()
-
-if(!raw){
-  checkWord.innerText=""
-  checkIPA.innerText=""
-  checkResult.innerHTML=""
-  currentCheckWord=""   // reset
-  return
+filtered.forEach((v,i)=>{
+const div=document.createElement("div")
+div.className="card"
+div.innerHTML=`
+<div class="word">${v.word}</div>
+${showPron?`<div class="pron">${v.pron}</div>`:""}
+<div class="meaning">${v.meaning}</div>
+<div class="icons">
+<span onclick="hear('${v.word}')">🔊</span>
+</div>
+<div class="star" onclick="fav(${i})">${v.fav?"★":"☆"}</div>
+`
+list.appendChild(div)
+})
 }
 
-/* ==== SET WORD TAMPIL ==== */
-checkWord.innerText = raw
-
-/* ==== TAMBAHAN: SET ENGLISH ==== */
-currentCheckWord = raw.toLowerCase()
-
-// translate dua arah
-let indo = await fetchIndoMeaning(raw)
-let eng = await fetchEnglishMeaning(raw)
-
-// jika input Inggris
-if(indo && indo.toLowerCase() !== raw.toLowerCase()){
-  checkResult.innerHTML = "Arti: " + indo
-
-  try{
-    let r = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${raw.toLowerCase()}`)
-    let j = await r.json()
-    let ipa = j[0]?.phonetics?.find(p=>p.text)?.text || ""
-    checkIPA.innerText = ipa
-  }catch{
-    checkIPA.innerText=""
-  }
-
-  /* ==== ENGLISH SUDAH BENAR ==== */
-  currentCheckWord = raw.toLowerCase()
-  return
+function fav(i){
+data[i].fav=!data[i].fav
+render()
 }
 
-// jika input Indo
-if(eng && eng.toLowerCase() !== raw.toLowerCase()){
-  checkResult.innerHTML = "English: " + eng
-  checkIPA.innerText = ""
-
-  /* ==== TAMBAHAN: SIMPAN ENGLISH ==== */
-  currentCheckWord = eng.toLowerCase()
-  return
+function toggleFav(){
+showFav=!showFav
+render()
 }
 
-// fallback
-checkResult.innerHTML = ""
-checkIPA.innerText = ""
-currentCheckWord = raw.toLowerCase()
+function togglePron(){
+showPron=!showPron
+render()
 }
 
-/* =========================
-   HEAR → ENGLISH
-========================= */
-function hearWord(){
-  if(currentCheckWord) speak(currentCheckWord)
+function shuffle(){
+data.sort(()=>Math.random()-0.5)
+render()
 }
 
-/* =========================
-   TEST → ENGLISH
-========================= */
-function testWord(){
-if(!currentCheckWord)return
-
-const btn=document.getElementById("testBtn")
-const wave=document.getElementById("wave")
-btn.classList.add("recording")
-wave.style.display="flex"
-
-const SR=window.SpeechRecognition||window.webkitSpeechRecognition
-if(!SR){btn.classList.remove("recording");wave.style.display="none";return}
-
-const recognition=new SR()
-recognition.lang="en-US"
-
-recognition.onresult = e => {
-
-  let spoken = (e.results[0][0].transcript || "")
-    .toLowerCase()
-    .replace(/[^a-z']/g,"")
-
-  let target = (currentCheckWord || "")
-    .toLowerCase()
-    .replace(/[^a-z']/g,"")
-
-  if(spoken.includes(target) && target.length>0){
-    checkResult.innerHTML="✔ Correct"
-  }else{
-    checkResult.innerHTML="✖ Wrong"
-    hearWord()
-  }
-
-  btn.classList.remove("recording")
-  wave.style.display="none"
-  recognition.stop()
+function speak(t){
+const u=new SpeechSynthesisUtterance(t)
+u.lang="en-US"
+speechSynthesis.speak(u)
 }
 
-recognition.onerror=()=>{
-btn.classList.remove("recording")
-wave.style.display="none"
+function hear(w){speak(w)}
+
+function exportCSV(){
+let csv="word,pron,meaning,fav\n"
+data.forEach(v=>{
+csv+=`${v.word},${v.pron},${v.meaning},${v.fav?1:0}\n`
+})
+const a=document.createElement("a")
+a.href=URL.createObjectURL(new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8;"}))
+a.download="my-vocab.csv"
+a.click()
 }
 
-recognition.onend=()=>{
-btn.classList.remove("recording")
-wave.style.display="none"
+function importCSV(){
+const i=document.createElement("input")
+i.type="file"
+i.accept=".csv"
+i.onchange=e=>{
+const r=new FileReader()
+r.onload=()=>{
+const lines=r.result.split(/\r?\n/).slice(1)
+data=[]
+lines.forEach(l=>{
+if(!l.trim())return
+const c=l.split(",")
+data.push({
+word:c[0]||"",
+pron:c[1]||"",
+meaning:c[2]||"",
+fav:c[3]=="1"
+})
+})
+render()
+alert("Import sukses")
+}
+r.readAsText(e.target.files[0])
+}
+i.click()
 }
 
-recognition.start()
+function deleteAll(){
+if(confirm("Delete all?")){
+data=[]
+render()
 }
+}
+
+render()
 </script>
+
 </body>
 </html>
