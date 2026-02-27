@@ -180,7 +180,7 @@ width:100%;margin-bottom:10px;padding:12px;border-radius:10px;border:1px solid #
 <div class="modal-content">
 
 <div style="display:flex;gap:6px;align-items:center">
-  <input id="checkInput" placeholder="Type word..." oninput="updateChecker()">
+  <input id="checkInput" placeholder="Type word..." oninput="loadCheckWord()">
   <button onclick="clearCheck()" style="margin-left:6px">↻</button>
 </div>
 
@@ -476,16 +476,8 @@ function clearCheck(){
 }
 
 function updateChecker(){
-  const inp = document.getElementById("checkInput").value.toLowerCase()
-
-  let found = data.find(v=>v.word.toLowerCase()==inp)
-
-  if(!found){
-    found = data.find(v=>inp.includes(v.word.toLowerCase()))
-  }
-
-  document.getElementById("checkWord").innerText = found ? found.word : inp
-  document.getElementById("checkIPA").innerText  = found ? found.pron : ""
+  const inp = document.getElementById("checkInput").value
+  document.getElementById("checkWord").innerText = inp
   document.getElementById("checkResult").innerHTML = ""
 }
 
