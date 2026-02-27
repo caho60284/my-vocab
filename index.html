@@ -186,7 +186,7 @@ width:100%;margin-bottom:10px;padding:12px;border-radius:10px;border:1px solid #
 
 <div id="checkWord" style="font-size:22px;font-weight:700"></div>
 <div id="checkIPA" style="color:#26a69a"></div>
-
+<div id="checkMeaning" style="margin-top:4px"></div>   <!-- TAMBAH INI -->
 <div id="checkResult" style="margin:8px 0 6px 0;font-weight:600"></div>
 
 <div class="modal-actions">
@@ -477,8 +477,11 @@ function clearCheck(){
 }
 
 function updateChecker(){
-  const inp = document.getElementById("checkInput").value
-  document.getElementById("checkWord").innerText = inp
+  const text = document.getElementById("checkInput").value
+
+  document.getElementById("checkWord").innerText = text
+  document.getElementById("checkIPA").innerText = getIPA(text) || ""
+  document.getElementById("checkMeaning").innerText = getMeaning(text) || ""
   document.getElementById("checkResult").innerHTML = ""
 }
 
