@@ -361,7 +361,7 @@ checkResult.innerHTML = ""
 checkIPA.innerText = ""
 }
 
-function hearWord(){if(checkWord.innerText)speak(checkWord.innerText)}
+function hearWord(){if(currentCheckWord)speak(currentCheckWord)}
 
 function testWord(){
 if(!checkWord.innerText)return
@@ -382,7 +382,7 @@ recognition.onresult = e => {
     .toLowerCase()
     .replace(/[^a-z']/g,"")
 
-  let target = (checkWord.innerText || "")
+  let target = (currentCheckWord || "")
     .toLowerCase()
     .replace(/[^a-z']/g,"")
 
