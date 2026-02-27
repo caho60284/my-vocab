@@ -399,11 +399,11 @@ recognition.onresult = e => {
     .replace(/[^a-z']/g,"")
 
   if(spoken.includes(target) && target.length>0){
-    checkResult.innerHTML="✔ Correct"
-  }else{
-    checkResult.innerHTML="✖ Wrong"
-    hearWord()
-  }
+  checkResult.innerHTML = "<div style='margin-top:6px'>✔ Correct</div>"
+}else{
+  checkResult.innerHTML = "<div style='margin-top:6px'>✖ Wrong</div>"
+  hearWord()
+}
 
   btn.classList.remove("recording")
   wave.style.display="none"
