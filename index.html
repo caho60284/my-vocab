@@ -90,6 +90,22 @@ width:100%;margin-bottom:10px;padding:12px;border-radius:10px;border:1px solid #
 
 <main id="list"></main>
 
+<!-- add/edit -->
+<div class="modal" id="modal">
+<div class="modal-content">
+<input id="word" placeholder="Word">
+<input id="ipa" placeholder="IPA">
+<textarea id="meaning" placeholder="Meaning"></textarea>
+
+<div class="modal-actions">
+<button class="audio" onclick="hear()">Hear</button>
+<button class="save" onclick="save()">Save</button>
+<button class="delete" onclick="del()">Delete</button>
+<button class="cancel" onclick="closeModal()">Cancel</button>
+</div>
+</div>
+</div>
+
 <!-- checker -->
 <div class="modal" id="checkerModal">
 <div class="modal-content">
@@ -101,11 +117,6 @@ width:100%;margin-bottom:10px;padding:12px;border-radius:10px;border:1px solid #
 
 <div id="checkWord" style="font-size:22px;font-weight:700"></div>
 <div id="checkIPA" style="color:#26a69a"></div>
-
-<!-- ✅ arti dipisah -->
-<div id="checkMeaning"></div>
-
-<!-- ✅ correct/wrong -->
 <div id="checkResult"></div>
 
 <div class="modal-actions">
@@ -125,7 +136,151 @@ width:100%;margin-bottom:10px;padding:12px;border-radius:10px;border:1px solid #
 </div>
 
 <script>
-let checkEnglish=""
+let data = JSON.parse(localStorage.getItem("vocabData")||"[]")
+let editIndex=-1
+let showFav=false
+
+function saveData(){localStorage.setItem("vocabData",JSON.stringify(data))}
+function render(){
+let list=document.getElementById("list")
+let q=document.getElementById("search").value.toLowerCase()
+list.innerHTML=""
+
+let filtered=data.filter(d=>{
+let hit=d.word.toLowerCase().includes(q)||d.meaning.toLowerCase().includes(q)
+return showFav?hit&&d.fav:hit
+})
+
+filtered.forEach((d,i)=>{
+let realIndex=data.indexOf(d)
+let card=document.createElement("div")
+card.className="card"
+card.innerHTML=`
+<div class="star" onclick="toggleFav(${realIndex})">${d.fav?"★":"☆"}</div>
+<div class="word" onclick="openModal(${realIndex})">${d.word}</div>
+<div class="pron">${d.ipa||""}</div>
+<div class="meaning">${d.meaning||""}</div>
+<div class="icons">
+<span onclick="speak('${d.word}')">🔊</span>
+</div>
+`
+list.appendChild(card)
+})
+document.getElementById("count").innerText=`${filtered.length} items`
+}
+
+function openModal(i=-1){
+editIndex=i
+modal.style.display="flex"
+if(i>-1){
+word.value=data[i].word
+ipa.value=data[i].ipa||""
+meaning.value=data[i].meaning||""
+}else{
+word.value=""
+ipa.value=""
+meaning.value=""
+}
+}
+
+function closeModal(){modal.style.display="none"}
+
+function save(){
+let w=word.value.trim()
+if(!w)return
+if(editIndex>-1){
+data[editIndex].word=w
+data[editIndex].ipa=ipa.value
+data[editIndex].meaning=meaning.value
+}else{
+data.push({word:w,ipa:ipa.value,meaning:meaning.value,fav:false})
+}
+saveData()
+render()
+closeModal()
+}
+
+function del(){
+if(editIndex>-1){
+data.splice(editIndex,1)
+saveData()
+render()
+closeModal()
+}
+}
+
+function deleteAll(){
+if(confirm("Delete all?")){
+data=[]
+saveData()
+render()
+}
+}
+
+function toggleFav(i){
+data[i].fav=!data[i].fav
+saveData()
+render()
+}
+
+function toggleFavView(){
+showFav=!showFav
+render()
+}
+
+function resetView(){
+showFav=false
+search.value=""
+render()
+}
+
+function speak(t){
+let u=new SpeechSynthesisUtterance(t)
+u.lang="en-US"
+speechSynthesis.speak(u)
+}
+
+function importCSV(){
+let inp=document.createElement("input")
+inp.type="file"
+inp.accept=".csv"
+inp.onchange=e=>{
+let file=e.target.files[0]
+let r=new FileReader()
+r.onload=ev=>{
+let lines=ev.target.result.split(/\r?\n/)
+lines.forEach(l=>{
+if(!l.trim())return
+let c=l.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/)
+if(c.length>=3){
+data.push({
+word:c[0].replace(/(^"|"$)/g,""),
+ipa:c[1].replace(/(^"|"$)/g,""),
+meaning:c[2].replace(/(^"|"$)/g,""),
+fav:c[3]=="1"
+})
+}
+})
+saveData()
+render()
+alert("Import success")
+}
+r.readAsText(file,"utf-8")
+}
+inp.click()
+}
+
+function exportCSV(){
+let csv=data.map(d=>`"${d.word}","${d.ipa||""}","${d.meaning||""}",${d.fav?1:0}`).join("\n")
+let blob=new Blob([csv],{type:"text/csv;charset=utf-8;"})
+let a=document.createElement("a")
+a.href=URL.createObjectURL(blob)
+a.download="vocab.csv"
+a.click()
+}
+
+function openChecker(){checkerModal.style.display="flex";checkInput.focus()}
+function closeChecker(){checkerModal.style.display="none"}
 
 async function fetchIndoMeaning(text){
 try{
@@ -140,17 +295,17 @@ try{
 let r = await fetch("https://translate.googleapis.com/translate_a/single?client=gtx&sl=id&tl=en&dt=t&q=" + encodeURIComponent(text))
 let j = await r.json()
 return j[0]?.map(x=>x[0]).join("") || ""
-}catch{return ""}
+}catch{
+return ""
+}
 }
 
 async function loadCheckWord(){
 let raw = checkInput.value.trim()
-checkEnglish=""
 
 if(!raw){
   checkWord.innerText=""
   checkIPA.innerText=""
-  checkMeaning.innerHTML=""
   checkResult.innerHTML=""
   return
 }
@@ -161,31 +316,30 @@ let indo = await fetchIndoMeaning(raw)
 let eng = await fetchEnglishMeaning(raw)
 
 if(indo && indo.toLowerCase() !== raw.toLowerCase()){
-  checkMeaning.innerHTML = "Arti: " + indo
-  checkIPA.innerText=""
-  checkResult.innerHTML=""
+  checkResult.innerHTML = "Arti: " + indo
+  try{
+    let r = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${raw.toLowerCase()}`)
+    let j = await r.json()
+    let ipa = j[0]?.phonetics?.find(p=>p.text)?.text || ""
+    checkIPA.innerText = ipa
+  }catch{
+    checkIPA.innerText=""
+  }
   return
 }
 
 if(eng && eng.toLowerCase() !== raw.toLowerCase()){
-  checkMeaning.innerHTML = "English: " + eng
+  checkResult.innerHTML = "English: " + eng
   checkIPA.innerText=""
-  checkEnglish = eng
-  checkResult.innerHTML=""
   return
 }
 
-checkMeaning.innerHTML=""
-checkIPA.innerText=""
 checkResult.innerHTML=""
+checkIPA.innerText=""
 }
 
 function hearWord(){
-  if(checkEnglish){
-    speak(checkEnglish)
-  }else if(checkWord.innerText){
-    speak(checkWord.innerText)
-  }
+if(checkWord.innerText)speak(checkWord.innerText)
 }
 
 function testWord(){
@@ -202,8 +356,14 @@ const recognition=new SR()
 recognition.lang="en-US"
 
 recognition.onresult = e => {
-  let spoken = (e.results[0][0].transcript || "").toLowerCase().replace(/[^a-z']/g,"")
-  let target = (checkEnglish || checkWord.innerText || "").toLowerCase().replace(/[^a-z']/g,"")
+
+  let spoken = (e.results[0][0].transcript || "")
+    .toLowerCase()
+    .replace(/[^a-z']/g,"")
+
+  let target = (checkWord.innerText || "")
+    .toLowerCase()
+    .replace(/[^a-z']/g,"")
 
   if(spoken.includes(target) && target.length>0){
     checkResult.innerHTML="✔ Correct"
@@ -236,6 +396,8 @@ function clearCheck(){
   loadCheckWord()
   inp.focus()
 }
+
+render()
 </script>
 
 </body>
