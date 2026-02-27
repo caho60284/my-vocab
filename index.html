@@ -205,6 +205,7 @@ width:100%;margin-bottom:10px;padding:12px;border-radius:10px;border:1px solid #
 let data=JSON.parse(localStorage.getItem("vocab")||"[]")
 let editIndex=null
 let favOnly=false
+let checkEnglish=""
 
 function render(){
 const list=document.getElementById("list")
@@ -336,7 +337,9 @@ let eng = await fetchEnglishMeaning(raw)
 // jika hasil Indo berbeda → berarti input Inggris
 if(indo && indo.toLowerCase() !== raw.toLowerCase()){
   checkResult.innerHTML = "Arti: " + indo
-
+if(indo && indo.toLowerCase() !== raw.toLowerCase()){
+  checkResult.innerHTML = "Arti: " + indo
+  checkEnglish = raw
   // IPA Inggris
   try{
     let r = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${raw.toLowerCase()}`)
@@ -353,6 +356,7 @@ if(indo && indo.toLowerCase() !== raw.toLowerCase()){
 if(eng && eng.toLowerCase() !== raw.toLowerCase()){
   checkResult.innerHTML = "English: " + eng
   checkIPA.innerText = ""
+  checkEnglish = eng
   return
 }
 
@@ -361,7 +365,9 @@ checkResult.innerHTML = ""
 checkIPA.innerText = ""
 }
 
-function hearWord(){if(checkWord.innerText)speak(checkWord.innerText)}
+function hearWord(){
+  if(checkEnglish) speak(checkEnglish)
+}
 
 function testWord(){
 if(!checkWord.innerText)return
@@ -382,7 +388,7 @@ recognition.onresult = e => {
     .toLowerCase()
     .replace(/[^a-z']/g,"")
 
-  let target = (checkWord.innerText || "")
+  let target = (checkEnglish || "")
     .toLowerCase()
     .replace(/[^a-z']/g,"")
 
